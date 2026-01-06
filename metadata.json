@@ -1,0 +1,7 @@
+{
+  "name": "Yourgency AI",
+  "description": "AI-powered sales and client management assistant for Yourgency, specialized in home service agency growth.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
