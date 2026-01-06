@@ -2,7 +2,20 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { SYSTEM_INSTRUCTION } from "../constants";
 import { LeadScore } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+const getAI = () => {
+  if (aiInstance) return aiInstance;
+
+  const apiKey = process.env.API_KEY || process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error("Gemini API Key is missing. Please check your environment variables.");
+    throw new Error("Gemini API Key is missing");
+  }
+
+  aiInstance = new GoogleGenAI({ apiKey });
+  return aiInstance;
+};
 
 export const generateLeadScore = async (
   companyName: string,
@@ -10,6 +23,7 @@ export const generateLeadScore = async (
   observations: string
 ): Promise<LeadScore | null> => {
   try {
+    const ai = getAI();
     const prompt = `
       Analyze this prospect for Yourgency (Marketing Agency for Home Services).
       Company: ${companyName}
@@ -63,6 +77,7 @@ export const generateDeepAnalysis = async (
   observations: string
 ): Promise<string> => {
   try {
+    const ai = getAI();
     const prompt = `
       Perform a deep strategic analysis for this prospect using your advanced reasoning capabilities.
       Company: ${companyName}
@@ -107,6 +122,7 @@ export const chatWithYourgency = async (
       tools = [{ googleMaps: {} }];
     }
 
+    const ai = getAI();
     const chat = ai.chats.create({
       model: model,
       config: {
@@ -117,7 +133,7 @@ export const chatWithYourgency = async (
     });
 
     const response = await chat.sendMessage({ message });
-    
+
     return {
       text: response.text || "No response generated.",
       groundingChunks: response.candidates?.[0]?.groundingMetadata?.groundingChunks
@@ -133,7 +149,8 @@ export const draftOutreachEmail = async (
   painPoints: string[],
   stage: string
 ): Promise<string> => {
-   try {
+  try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Draft a short, punchy outreach email for ${companyName}.
@@ -145,8 +162,8 @@ export const draftOutreachEmail = async (
       }
     });
     return response.text || "Could not generate email.";
-   } catch (error) {
-     console.error("Error drafting email", error);
-     return "Error generating email.";
-   }
+  } catch (error) {
+    console.error("Error drafting email", error);
+    return "Error generating email.";
+  }
 }
