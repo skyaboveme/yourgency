@@ -23,7 +23,7 @@ export interface Prospect {
   companyName: string;
   contactName: string;
   email: string;
-  industry: 'HVAC' | 'Plumbing' | 'Electrical' | 'Roofing' | 'Pest Control' | 'Other';
+  industry: string;
   revenueRange: string;
   stage: PipelineStage;
   score?: LeadScore;

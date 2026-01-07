@@ -6,11 +6,26 @@ import { LeadScore } from '../types';
 const Prospecting: React.FC = () => {
   const [companyName, setCompanyName] = useState('');
   const [industry, setIndustry] = useState('HVAC');
+  const [availableIndustries, setAvailableIndustries] = useState<string[]>(['HVAC', 'Plumbing', 'Electrical', 'Pest Control', 'Roofing']);
   const [observations, setObservations] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [score, setScore] = useState<LeadScore | null>(null);
   const [deepAnalysis, setDeepAnalysis] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.industries && Array.isArray(data.industries) && data.industries.length > 0) {
+          setAvailableIndustries(data.industries);
+          if (!data.industries.includes(industry)) {
+            setIndustry(data.industries[0]);
+          }
+        }
+      })
+      .catch(err => console.log('Using default industries:', err));
+  }, []);
 
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,11 +88,9 @@ const Prospecting: React.FC = () => {
                 value={industry}
                 onChange={(e) => setIndustry(e.target.value)}
               >
-                <option value="HVAC">HVAC</option>
-                <option value="Plumbing">Plumbing</option>
-                <option value="Electrical">Electrical</option>
-                <option value="Pest Control">Pest Control</option>
-                <option value="Roofing">Roofing</option>
+                {availableIndustries.map((ind) => (
+                  <option key={ind} value={ind}>{ind}</option>
+                ))}
               </select>
             </div>
 
@@ -125,8 +138,8 @@ const Prospecting: React.FC = () => {
 
           {isLoading && (
             <div className="text-center text-gray-500 my-auto">
-               <Loader2 className="animate-spin mx-auto mb-3 text-blue-500" size={48} />
-               <p>Yourgency is researching {companyName || 'the prospect'}...</p>
+              <Loader2 className="animate-spin mx-auto mb-3 text-blue-500" size={48} />
+              <p>Yourgency is researching {companyName || 'the prospect'}...</p>
             </div>
           )}
 
@@ -155,8 +168,8 @@ const Prospecting: React.FC = () => {
                       <span>{metric.value}/10</span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className={`h-2 rounded-full ${getScoreColor(metric.value)}`} 
+                      <div
+                        className={`h-2 rounded-full ${getScoreColor(metric.value)}`}
                         style={{ width: `${metric.value * 10}%` }}
                       ></div>
                     </div>
@@ -169,7 +182,7 @@ const Prospecting: React.FC = () => {
               </div>
 
               <div className="mt-auto space-y-3 pt-4">
-                 <button 
+                <button
                   onClick={handleDeepAnalyze}
                   className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 rounded-lg flex items-center justify-center space-x-2 transition-all shadow-md"
                 >
@@ -186,9 +199,9 @@ const Prospecting: React.FC = () => {
 
           {isThinking && (
             <div className="text-center text-gray-500 my-auto animate-pulse">
-               <BrainCircuit className="animate-bounce mx-auto mb-3 text-indigo-600" size={48} />
-               <p className="font-semibold text-lg text-indigo-900">Deep Thinking...</p>
-               <p className="text-sm mt-2">Formulating strategy. This may take a moment.</p>
+              <BrainCircuit className="animate-bounce mx-auto mb-3 text-indigo-600" size={48} />
+              <p className="font-semibold text-lg text-indigo-900">Deep Thinking...</p>
+              <p className="text-sm mt-2">Formulating strategy. This may take a moment.</p>
             </div>
           )}
 
@@ -201,7 +214,7 @@ const Prospecting: React.FC = () => {
               <div className="flex-1 overflow-y-auto bg-white p-4 rounded-lg border border-gray-200 shadow-inner text-sm leading-relaxed whitespace-pre-wrap text-gray-800 h-[400px]">
                 {deepAnalysis}
               </div>
-              <button 
+              <button
                 onClick={() => setDeepAnalysis(null)}
                 className="mt-4 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold py-2 rounded-lg transition-colors"
               >

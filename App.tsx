@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Target, GitPullRequest, MessageSquareText, Settings, Sparkles, LogOut } from 'lucide-react';
+import { LayoutDashboard, Target, GitPullRequest, MessageSquareText, Settings as SettingsIcon, Sparkles, LogOut } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Prospecting from './components/Prospecting';
 import Pipeline from './components/Pipeline';
 import SkyForceChat from './components/SkyForceChat';
 import Login from './components/Login';
+import Settings from './components/Settings';
 
 const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'prospecting' | 'pipeline'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'prospecting' | 'pipeline' | 'settings'>('dashboard');
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
@@ -36,6 +37,8 @@ const App: React.FC = () => {
         return <Prospecting />;
       case 'pipeline':
         return <Pipeline />;
+      case 'settings':
+        return <Settings />;
       default:
         return <Dashboard />;
     }
@@ -86,8 +89,12 @@ const App: React.FC = () => {
         </nav>
 
         <div className="p-4 border-t border-slate-800 space-y-2">
-          <button className="w-full flex items-center p-2 text-slate-400 hover:text-white transition-colors">
-            <Settings size={20} />
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`w-full flex items-center p-2 transition-colors ${activeTab === 'settings' ? 'text-white bg-slate-800 rounded-lg' : 'text-slate-400 hover:text-white'
+              }`}
+          >
+            <SettingsIcon size={20} />
             <span className="ml-3 hidden lg:block text-sm">Settings</span>
           </button>
           <button
@@ -111,8 +118,8 @@ const App: React.FC = () => {
             <button
               onClick={() => setIsChatOpen(!isChatOpen)}
               className={`flex items-center space-x-2 px-4 py-2 rounded-full border transition-all ${isChatOpen
-                  ? 'bg-blue-50 border-blue-200 text-blue-600 ring-2 ring-blue-100'
-                  : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
+                ? 'bg-blue-50 border-blue-200 text-blue-600 ring-2 ring-blue-100'
+                : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
                 }`}
             >
               <MessageSquareText size={18} />

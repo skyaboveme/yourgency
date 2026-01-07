@@ -1,6 +1,14 @@
 {
     "name": "yourgency",
     "compatibility_date": "2024-09-23",
+    "main": "src/worker.ts",
+    "kv_namespaces": [
+        {
+            "binding": "CONFIG",
+            "id": "YOUR_KV_NAMESPACE_ID",
+            "preview_id": "YOUR_KV_NAMESPACE_ID"
+        }
+    ],
     "assets": {
         "directory": "./dist"
     }
