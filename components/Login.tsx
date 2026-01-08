@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Mail, Lock, LogIn, AlertCircle } from 'lucide-react';
 
 interface LoginProps {
-    onLogin: () => void;
+    onLogin: (user: any) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -11,20 +11,31 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setIsLoading(true);
 
-        // Simulate network delay for better UX
-        setTimeout(() => {
-            if (email === 'skyabove@gmail.com' && password === 'Looploop99$$@') {
-                onLogin();
+        try {
+            const res = await fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password })
+            });
+
+            if (res.ok) {
+                const user = await res.json();
+                onLogin(user); // Pass full user object
             } else {
-                setError('Invalid email or password');
+                const data = await res.json();
+                setError(data.error || 'Invalid email or password');
                 setIsLoading(false);
             }
-        }, 800);
+        } catch (err) {
+            console.error(err);
+            setError('Login failed. Please check your connection.');
+            setIsLoading(false);
+        }
     };
 
     return (

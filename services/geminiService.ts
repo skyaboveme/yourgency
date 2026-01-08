@@ -167,3 +167,63 @@ export const draftOutreachEmail = async (
     return "Error generating email.";
   }
 }
+
+export const generateMorningBrief = async (
+  prospects: any[]
+): Promise<{
+  summary: string;
+  actionItems: string[];
+  risks: string[];
+} | null> => {
+  try {
+    const ai = getAI();
+    // Filter for relevant context to save tokens/noise
+    const activeDeals = prospects.filter(p =>
+      p.stage !== 'CLOSED_LOST' &&
+      p.stage !== 'CLOSED_WON'
+    ).map(p => ({
+      name: p.companyName,
+      stage: p.stage,
+      score: p.score?.composite || 'N/A',
+      lastContact: p.lastContact || 'Never',
+      revenue: p.revenueRange
+    }));
+
+    const prompt = `
+        Act as a high-performance Sales Director. Generate a "Morning Brief" for the user based on their active pipeline.
+        
+        Active Pipeline Context:
+        ${JSON.stringify(activeDeals)}
+
+        Task:
+        1. identifying 3 critical "Action Items" (e.g. stalled deals, high-value opportunities).
+        2. identifying 2-3 "Risks" (e.g. deals rotting in prospect stage, missing follow-ups).
+        3. writing a 2-sentence motivational summary of the pipeline health.
+
+        Output purely valid JSON:
+        {
+            "summary": "...",
+            "actionItems": ["...", "..."],
+            "risks": ["...", "..."]
+        }
+        `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: {
+        systemInstruction: SYSTEM_INSTRUCTION,
+        responseMimeType: "application/json"
+      }
+    });
+
+    if (response.text) {
+      return JSON.parse(response.text);
+    }
+    return null;
+
+  } catch (error) {
+    console.error("Error generating morning brief:", error);
+    return null;
+  }
+};

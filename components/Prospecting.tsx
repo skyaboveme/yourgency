@@ -13,6 +13,12 @@ const Prospecting: React.FC = () => {
   const [score, setScore] = useState<LeadScore | null>(null);
   const [deepAnalysis, setDeepAnalysis] = useState<string | null>(null);
 
+  // New Fields
+  const [contactName, setContactName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [website, setWebsite] = useState('');
+
   React.useEffect(() => {
     fetch('/api/config')
       .then(res => res.json())
@@ -44,6 +50,43 @@ const Prospecting: React.FC = () => {
     const analysis = await generateDeepAnalysis(companyName, industry, observations);
     setDeepAnalysis(analysis);
     setIsThinking(false);
+  };
+
+  const handleAddPipeline = async () => {
+    if (!score) return;
+
+    try {
+      const prospect = {
+        id: crypto.randomUUID(),
+        companyName,
+        contactName: contactName || 'Unknown',
+        email: email || '',
+        phone: phone || '',
+        website: website || '',
+        industry,
+        stage: 'prospect',
+        revenueRange: 'Unknown',
+        score: score,
+        notes: observations,
+        createdAt: new Date().toISOString()
+      };
+
+      const res = await fetch('/api/prospects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(prospect)
+      });
+
+      if (res.ok) {
+        alert('Prospect added to pipeline!');
+        // Reset form or just leave it? Let's leave it for now so they can see what they added.
+      } else {
+        alert('Failed to add prospect. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error adding prospect:', error);
+      alert('Error adding prospect.');
+    }
   };
 
   const getScoreColor = (value: number) => {
@@ -79,6 +122,52 @@ const Prospecting: React.FC = () => {
                 onChange={(e) => setCompanyName(e.target.value)}
                 required
               />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  placeholder="e.g. John Doe"
+                  value={contactName}
+                  onChange={(e) => setContactName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Website URL</label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  placeholder="e.g. acmehvac.com"
+                  value={website}
+                  onChange={(e) => setWebsite(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  placeholder="john@acme.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <input
+                  type="tel"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                  placeholder="(555) 123-4567"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
             </div>
 
             <div>
@@ -189,7 +278,9 @@ const Prospecting: React.FC = () => {
                   <BrainCircuit size={18} />
                   <span>Deep Strategic Analysis (Thinking Mode)</span>
                 </button>
-                <button className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2 rounded-lg flex items-center justify-center space-x-2 transition-all">
+                <button
+                  onClick={handleAddPipeline}
+                  className="w-full bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-semibold py-2 rounded-lg flex items-center justify-center space-x-2 transition-all">
                   <span>Add to Pipeline</span>
                   <ArrowRight size={16} />
                 </button>

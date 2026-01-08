@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Plus, Trash2, AlertCircle, RefreshCw } from 'lucide-react';
 
+import { User } from '../types';
+
 interface Config {
     industries: string[];
     systemInstruction?: string;
@@ -13,16 +15,32 @@ const Settings: React.FC = () => {
     const [error, setError] = useState('');
     const [newIndustry, setNewIndustry] = useState('');
 
+    // User Management State
+    const [users, setUsers] = useState<User[]>([]);
+    const [newUserName, setNewUserName] = useState('');
+    const [newUserEmail, setNewUserEmail] = useState('');
+    const [newUserRole, setNewUserRole] = useState('user');
+
     const fetchConfig = async () => {
         setLoading(true);
         try {
-            const res = await fetch('/api/config');
-            if (!res.ok) throw new Error('Failed to load settings');
-            const data = await res.json();
-            setConfig(data);
+            const [configRes, usersRes] = await Promise.all([
+                fetch('/api/config'),
+                fetch('/api/users')
+            ]);
+
+            if (!configRes.ok) throw new Error('Failed to load settings');
+            const configData = await configRes.json();
+            setConfig(configData);
+
+            if (usersRes.ok) {
+                const usersData = await usersRes.json();
+                if (Array.isArray(usersData)) setUsers(usersData);
+            }
+
         } catch (err) {
             console.error(err);
-            // Fallback to defaults if API fails (e.g. local dev without worker)
+            // Fallback to defaults
             setConfig({
                 industries: ['HVAC', 'Plumbing', 'Electrical', 'Roofing', 'Pest Control'],
                 systemInstruction: ''
@@ -30,6 +48,39 @@ const Settings: React.FC = () => {
             setError('Could not load settings from backend. Using defaults.');
         } finally {
             setLoading(false);
+        }
+    };
+
+    const addUser = async () => {
+        if (!newUserName || !newUserEmail) return;
+        try {
+            const res = await fetch('/api/users', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: newUserName,
+                    email: newUserEmail,
+                    role: newUserRole
+                })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setUsers(prev => [{
+                    id: data.id,
+                    name: newUserName,
+                    email: newUserEmail,
+                    role: newUserRole as 'admin' | 'user'
+                }, ...prev]);
+                setNewUserName('');
+                setNewUserEmail('');
+            } else {
+                const errData = await res.json();
+                setError(`Failed to add user: ${errData.error || 'Unknown error'}`);
+            }
+        } catch (e) {
+            console.error(e);
+            setError('Failed to add user. Network error.');
         }
     };
 
@@ -130,6 +181,122 @@ const Settings: React.FC = () => {
                             </button>
                         </div>
                     ))}
+                </div>
+            </div>
+
+            {/* Team Management Section */}
+            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h3 className="text-lg font-semibold text-slate-800 mb-4">Team Management</h3>
+
+                {/* Add User Form */}
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-2 mb-6">
+                    <input
+                        type="text"
+                        placeholder="Name"
+                        className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        id="newUserName"
+                    />
+                    <input
+                        type="email"
+                        placeholder="Email"
+                        className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        id="newUserEmail"
+                    />
+                    <input
+                        type="password"
+                        placeholder="Password (optional)"
+                        className="p-2 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                        id="newUserPassword"
+                    />
+                    <div className="flex gap-2">
+                        <select id="newUserRole" className="flex-1 p-2 border border-slate-200 rounded-lg bg-white">
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                        <button
+                            onClick={async () => {
+                                const nameInput = document.getElementById('newUserName') as HTMLInputElement;
+                                const emailInput = document.getElementById('newUserEmail') as HTMLInputElement;
+                                const passwordInput = document.getElementById('newUserPassword') as HTMLInputElement;
+                                const roleInput = document.getElementById('newUserRole') as HTMLSelectElement;
+
+                                if (nameInput.value && emailInput.value) {
+                                    try {
+                                        const res = await fetch('/api/users', {
+                                            method: 'POST',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({
+                                                name: nameInput.value,
+                                                email: emailInput.value,
+                                                password: passwordInput.value || undefined,
+                                                role: roleInput.value
+                                            })
+                                        });
+                                        if (res.ok) {
+                                            const data = await res.json();
+                                            // Refresh list (optimistic update)
+                                            setUsers(prev => [{
+                                                id: data.id,
+                                                name: nameInput.value,
+                                                email: emailInput.value,
+                                                role: roleInput.value as 'admin' | 'user',
+                                                lastLogin: undefined
+                                            }, ...prev]);
+
+                                            nameInput.value = '';
+                                            emailInput.value = '';
+                                            passwordInput.value = '';
+                                            alert('User added successfully');
+                                        } else {
+                                            const errData = await res.json();
+                                            alert(`Failed: ${errData.error}`);
+                                        }
+                                    } catch (e) {
+                                        console.error(e);
+                                        alert('Failed to add user');
+                                    }
+                                }
+                            }}
+                            className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-12 flex justify-center items-center"
+                        >
+                            <Plus size={20} />
+                        </button>
+                    </div>
+                </div>
+
+                <div className="space-y-0 border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm text-left">
+                        <thead className="bg-slate-50 text-slate-500 font-medium">
+                            <tr>
+                                <th className="p-3">Name</th>
+                                <th className="p-3">Email</th>
+                                <th className="p-3">Role</th>
+                                <th className="p-3">Last Login</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {users.map(user => (
+                                <tr key={user.id} className="hover:bg-slate-50">
+                                    <td className="p-3 font-medium text-slate-800">{user.name}</td>
+                                    <td className="p-3 text-slate-500">{user.email}</td>
+                                    <td className="p-3">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.role === 'admin' ? 'bg-purple-100 text-purple-700' : 'bg-green-100 text-green-700'
+                                            }`}>
+                                            {user.role}
+                                        </span>
+                                    </td>
+                                    <td className="p-3 text-slate-400">
+                                        {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Never'}
+                                    </td>
+                                </tr>
+                            ))}
+                            {users.length === 0 && (
+                                <tr>
+                                    <td colSpan={4} className="p-6 text-center text-slate-400">No users found.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

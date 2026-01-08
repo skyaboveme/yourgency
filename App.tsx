@@ -1,33 +1,18 @@
-import React, { useState, useEffect } from 'react';
-import { LayoutDashboard, Target, GitPullRequest, MessageSquareText, Settings as SettingsIcon, Sparkles, LogOut } from 'lucide-react';
+import React, { useState } from 'react';
+import { Building2, LayoutDashboard, Target, GitPullRequest, Settings as SettingsIcon } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import Prospecting from './components/Prospecting';
 import Pipeline from './components/Pipeline';
-import SkyForceChat from './components/SkyForceChat';
-import Login from './components/Login';
 import Settings from './components/Settings';
+import Accounts from './components/Accounts';
+import Login from './components/Login';
+import { User } from './types';
 
-const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'prospecting' | 'pipeline' | 'settings'>('dashboard');
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+type Tab = 'dashboard' | 'prospecting' | 'accounts' | 'pipeline' | 'settings';
 
-  useEffect(() => {
-    const auth = localStorage.getItem('isAuthenticated');
-    if (auth === 'true') {
-      setIsAuthenticated(true);
-    }
-  }, []);
-
-  const handleLogin = () => {
-    localStorage.setItem('isAuthenticated', 'true');
-    setIsAuthenticated(true);
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('isAuthenticated');
-    setIsAuthenticated(false);
-  };
+function App() {
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [user, setUser] = useState<User | null>(null);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -35,6 +20,8 @@ const App: React.FC = () => {
         return <Dashboard />;
       case 'prospecting':
         return <Prospecting />;
+      case 'accounts':
+        return <Accounts />;
       case 'pipeline':
         return <Pipeline />;
       case 'settings':
@@ -44,103 +31,91 @@ const App: React.FC = () => {
     }
   };
 
-  if (!isAuthenticated) {
-    return <Login onLogin={handleLogin} />;
+  if (!user) {
+    return <Login onLogin={(u) => setUser(u)} />;
   }
 
   return (
     <div className="flex h-screen bg-gray-50 overflow-hidden text-slate-800">
-      {/* Sidebar Navigation */}
-      <aside className="w-20 lg:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col transition-all duration-300">
-        <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-slate-800">
-          <div className="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center flex-shrink-0">
-            <Sparkles className="text-white" size={18} />
-          </div>
-          <span className="ml-3 font-bold text-lg hidden lg:block tracking-wide">Yourgency</span>
+      {/* Sidebar */}
+      <nav className="w-64 bg-slate-900 text-slate-300 flex flex-col h-full border-r border-slate-800">
+        <div className="p-6">
+          <h1 className="text-xl font-bold text-white tracking-tight flex items-center">
+            <span className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-blue-500/20">
+              AI
+            </span>
+            YOURGENCY
+          </h1>
         </div>
 
-        <nav className="flex-1 py-6 space-y-2 px-3">
+        <div className="flex-1 py-6 space-y-2 px-3">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`w-full flex items-center p-3 rounded-lg transition-colors group ${activeTab === 'dashboard' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            className={`w-full flex items-center p-3 rounded-lg transition-colors group ${activeTab === 'dashboard' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'
               }`}
           >
             <LayoutDashboard size={20} className="flex-shrink-0" />
-            <span className="ml-3 hidden lg:block font-medium">Dashboard</span>
+            <span className="ml-3 font-medium">Dashboard</span>
           </button>
 
           <button
             onClick={() => setActiveTab('prospecting')}
-            className={`w-full flex items-center p-3 rounded-lg transition-colors group ${activeTab === 'prospecting' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            className={`w-full flex items-center p-3 rounded-lg transition-colors group ${activeTab === 'prospecting' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'
               }`}
           >
             <Target size={20} className="flex-shrink-0" />
-            <span className="ml-3 hidden lg:block font-medium">Prospecting</span>
+            <span className="ml-3 font-medium">Prospecting</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('accounts')}
+            className={`w-full flex items-center p-3 rounded-lg transition-colors group ${activeTab === 'accounts' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'
+              }`}
+          >
+            <Building2 size={20} className="flex-shrink-0" />
+            <span className="ml-3 font-medium">Accounts</span>
           </button>
 
           <button
             onClick={() => setActiveTab('pipeline')}
-            className={`w-full flex items-center p-3 rounded-lg transition-colors group ${activeTab === 'pipeline' ? 'bg-blue-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+            className={`w-full flex items-center p-3 rounded-lg transition-colors group ${activeTab === 'pipeline' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'
               }`}
           >
             <GitPullRequest size={20} className="flex-shrink-0" />
-            <span className="ml-3 hidden lg:block font-medium">Pipeline</span>
+            <span className="ml-3 font-medium">Pipeline</span>
           </button>
-        </nav>
 
-        <div className="p-4 border-t border-slate-800 space-y-2">
           <button
             onClick={() => setActiveTab('settings')}
-            className={`w-full flex items-center p-2 transition-colors ${activeTab === 'settings' ? 'text-white bg-slate-800 rounded-lg' : 'text-slate-400 hover:text-white'
+            className={`w-full flex items-center p-3 rounded-lg transition-colors group ${activeTab === 'settings' ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-800 hover:text-white'
               }`}
           >
-            <SettingsIcon size={20} />
-            <span className="ml-3 hidden lg:block text-sm">Settings</span>
-          </button>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center p-2 text-slate-400 hover:text-red-400 transition-colors"
-          >
-            <LogOut size={20} />
-            <span className="ml-3 hidden lg:block text-sm">Sign Out</span>
+            <SettingsIcon size={20} className="flex-shrink-0" />
+            <span className="ml-3 font-medium">Settings</span>
           </button>
         </div>
-      </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        {/* Top Header */}
-        <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm z-10">
-          <h1 className="text-xl font-semibold capitalize text-gray-800">
-            {activeTab}
-          </h1>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => setIsChatOpen(!isChatOpen)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-full border transition-all ${isChatOpen
-                ? 'bg-blue-50 border-blue-200 text-blue-600 ring-2 ring-blue-100'
-                : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'
-                }`}
-            >
-              <MessageSquareText size={18} />
-              <span className="font-medium text-sm">Ask Yourgency</span>
-            </button>
-            <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold border border-blue-200">
-              JS
+        <div className="p-4 border-t border-slate-800">
+          <div className="flex items-center p-3 rounded-lg bg-slate-800/50 border border-slate-700">
+            <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-xs">
+              {user.name.charAt(0)}
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-white">{user.name}</p>
+              <p className="text-xs text-slate-400">Admin</p>
             </div>
           </div>
-        </header>
+        </div>
+      </nav>
 
-        {/* Scrollable Content */}
-        <div className="flex-1 overflow-auto p-6 lg:p-10 relative">
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="p-8">
           {renderContent()}
         </div>
-
-        {/* Chat Overlay */}
-        {isChatOpen && <SkyForceChat onClose={() => setIsChatOpen(false)} />}
       </main>
     </div>
   );
-};
+}
 
 export default App;
